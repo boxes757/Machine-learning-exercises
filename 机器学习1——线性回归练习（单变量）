@@ -1,0 +1,74 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv('01-linear regression/ex1data1.txt', names=['population','profit'])
+print(data.head())
+
+#print(data.tail())
+#print(data.describe())
+
+data.insert(0,'ones',1,True)
+print(data.head())
+print(data.describe())
+
+X = data.iloc[:,0:-1]
+Y = data.iloc[:,-1]
+print(X.head())
+print(Y.head())
+
+X = X.values
+Y = Y.values
+print(X.shape)
+print(Y.shape)
+
+Y = Y.reshape(97,1)
+print(Y.shape)
+
+def CostFunction(X,Y,theta):
+    inner = np.power((X @ theta - Y),2)
+    return np.sum(inner) / (2 * len(X))
+
+theta = np.zeros((2,1))
+print(theta.shape)
+
+# cost_init = CostFunction(X,Y,theta)
+# print(cost_init)
+
+
+def GradientDescent(X,Y,theta,alpha,times):
+    costs=[]
+    for i in range(times):
+        theta = theta - (X.T @ (X @ theta - Y)) * alpha / len(X)
+        cost = CostFunction(X,Y,theta)
+        costs.append(cost)
+        if(i%100 == 0):
+            print(cost)
+    return theta,costs
+
+alpha = 0.02
+times = 2000
+
+theta,costs = GradientDescent(X,Y,theta,alpha,times)
+print(theta)
+print(costs)
+
+
+flg,ax=plt.subplots()
+ax.plot(np.arange(times),costs,'-',label='cost')
+ax.legend()
+ax.set(xlabel='times',ylabel='cost',title='times & cost')
+plt.savefig('01-linear regression/single1.jpg')
+plt.show()
+
+x=np.linspace(0,25,100)
+print(x)
+y_= theta[0,0] + theta [1,0] * x
+
+fig,ax1=plt.subplots()
+ax1.scatter(X[:,1],Y,label='training data')
+ax1.plot(x,y_,'-b',label='test data')
+ax1.legend()
+ax1.set(xlabel='population',ylabel='profit')
+plt.savefig('01-linear regression/single2.jpg')
+plt.show()
