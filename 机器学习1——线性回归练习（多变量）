@@ -1,0 +1,95 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv('01-linear regression/ex1data2.txt',names=['size','room','price'])
+print(data.head())
+
+def standard(data):
+    return (data-data.mean()) / data.std()
+data = standard(data)
+print(data.head())
+
+data.insert(0,'ones',1)
+print(data.head())
+
+X = data.iloc[:,0:-1]
+Y = data.iloc[:,-1]
+print(X.head())
+print(Y.head())
+
+X = X.values
+Y = Y.values
+print(X.shape)
+Y = Y.reshape(47,1)
+print(Y.shape)
+
+def CostFunction(X,Y,theta):
+    inner = np.power((X @ theta - Y),2)
+    return np.sum(inner)/ (2 * len(X))
+
+theta = np.zeros((3,1))
+print(theta)
+
+cost_init = CostFunction(X,Y,theta)
+print(cost_init)
+
+def GradientDescent(X,Y,theta,alpha,times,isprint = False):
+    costs=[]
+    for i in range(times):
+        theta = theta - (X.T @ (X @ theta - Y)) * (alpha / len(X))
+        cost = CostFunction(X,Y,theta)
+        costs.append(cost)
+        if(i%500 == 0):
+            if(isprint):
+                print(cost)
+    return theta,costs
+
+
+can_alpha=[0.01,0.02,0.001,0.003,0.0001]
+times=2000
+
+for alpha in can_alpha:
+    isprint = True
+    _,costs=GradientDescent(X,Y,theta,alpha,times,isprint)
+    print('当前alpha值:',alpha)
+
+isprint = False
+
+flg,ax = plt.subplots()
+for alpha in can_alpha:
+    _,costs = GradientDescent(X,Y,theta,alpha,times,isprint)
+    ax.plot(np.arange(times),costs,label=alpha)
+ax.legend()
+ax.set(xlabel='times',ylabel='price',title='times & price')
+plt.savefig('01-linear regression/duo1.jpg')
+plt.show()
+
+
+
+
+fig,ax1=plt.subplots()
+for alpha in can_alpha:
+    theta = np.zeros((3,1))   ##绘图用到theta的值，所以在下一行中需要保存theta的值，但每次需要对theta初始化
+    theta,costs = GradientDescent(X,Y,theta,alpha,times)
+    x = np.linspace(-2, 4, 100)
+    y_ = theta[0,0]+theta[1,0] * x + theta[2,0] * (x**2)
+    ax1.plot(x,y_,'-',label=alpha)
+ax1.scatter(X[:,1],Y,label='training data')
+ax1.legend()
+ax1.set(xlabel='size',ylabel='price')
+plt.savefig('01-linear regression/duo2.jpg')
+plt.show()
+
+fig,ax2=plt.subplots()
+for alpha in can_alpha:
+    theta = np.zeros((3,1))
+    theta,costs = GradientDescent(X,Y,theta,alpha,times)
+    x = np.linspace(-2, 4, 100)
+    y_ = theta[0,0]+theta[1,0] * x + theta[2,0] * (x**2)
+    ax2.plot(x,y_,'-',label=alpha)
+ax2.scatter(X[:,2],Y,label='training data')
+ax2.legend()
+ax2.set(xlabel='room',ylabel='price')
+plt.savefig('01-linear regression/duo3.jpg')
+plt.show()
