@@ -64,32 +64,3 @@ ax.legend()
 ax.set(xlabel='times',ylabel='price',title='times & price')
 plt.savefig('01-linear regression/duo1.jpg')
 plt.show()
-
-
-
-
-fig,ax1=plt.subplots()
-for alpha in can_alpha:
-    theta = np.zeros((3,1))   ##绘图用到theta的值，所以在下一行中需要保存theta的值，但每次需要对theta初始化
-    theta,costs = GradientDescent(X,Y,theta,alpha,times)
-    x = np.linspace(-2, 4, 100)
-    y_ = theta[0,0]+theta[1,0] * x + theta[2,0] * (x**2)
-    ax1.plot(x,y_,'-',label=alpha)
-ax1.scatter(X[:,1],Y,label='training data')
-ax1.legend()
-ax1.set(xlabel='size',ylabel='price')
-plt.savefig('01-linear regression/duo2.jpg')
-plt.show()
-
-fig,ax2=plt.subplots()
-for alpha in can_alpha:
-    theta = np.zeros((3,1))
-    theta,costs = GradientDescent(X,Y,theta,alpha,times)
-    x = np.linspace(-2, 4, 100)
-    y_ = theta[0,0]+theta[1,0] * x + theta[2,0] * (x**2)
-    ax2.plot(x,y_,'-',label=alpha)
-ax2.scatter(X[:,2],Y,label='training data')
-ax2.legend()
-ax2.set(xlabel='room',ylabel='price')
-plt.savefig('01-linear regression/duo3.jpg')
-plt.show()
