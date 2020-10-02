@@ -1,0 +1,97 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv('02-logistic_regression/ex2data2.txt',names=['Test1','Test2','Accepted'])
+
+fig,ax = plt.subplots()
+ax.scatter(data[data['Accepted']==0]['Test1'],data[data['Accepted']==0]['Test2'],c='r',marker='x',label='y=0')
+ax.scatter(data[data['Accepted']==1]['Test1'],data[data['Accepted']==1]['Test2'],c='g',marker='o',label='y=1')
+ax.legend()
+ax.set(xlabel='Test1',ylabel='Test2')
+plt.savefig('02-logistic_regression/logistics(not linear)1.jpg')
+plt.show()
+
+def feature_mapping(x1,x2,power):
+    data={}
+    for i in np.arange(power+1):
+        for j in np.arange(i+1):
+            data['F{}{}'.format(i-j,j)] = np.power(x1,i-j) * np.power(x2,j)
+    return pd.DataFrame(data)
+
+x1 = data['Test1']
+x2 = data['Test2']
+data2 = feature_mapping(x1,x2,6)
+print(data2.head())
+
+X = data2.values
+y = data.iloc[:,-1]
+y= y.values
+y = y.reshape(len(y),1)
+
+def sigmoid(z):
+    return 1/(1+np.exp(-z))
+
+def CostFunction(X,y,theta,lamda):
+    R=sigmoid(X@theta)
+    A=y * np.log(R)
+    B=(1-y) * np.log(1-R)
+    reg = np.sum(np.power(theta[1:],2)) * (lamda/ 2 * len(X))
+    return -np.sum(A+B)/len(X)+reg
+
+theta = np.zeros((28,1))
+
+'''
+lamda = 1
+cost_init = CostFunction(X,y,theta,lamda)
+print(cost_init)
+'''
+
+def GradientDescent(X,y,theta,alpha,times,lamda):
+    costs=[]
+    for i in range(times):
+        A = sigmoid(X @ theta)
+        R = theta[1:] * (lamda/len(X))
+        R = np.insert(R,0,values=0,axis=0)
+        theta = theta - (alpha/len(X)) * (X.T @ (A-y)) - R
+        cost = CostFunction(X, y, theta,lamda)
+        costs.append(cost)
+        if(i % 1000 ==0):
+            print(cost)
+    return theta,costs
+
+alpha = 0.001
+times = 200000
+lamda = 0.001
+
+theta_final,costs = GradientDescent(X,y,theta,alpha,times,lamda)
+
+def predict(X,theta):
+    A = sigmoid(X@theta)
+    return [1 if x>=0.5 else 0 for x in A]
+
+y_= np.array(predict(X,theta_final))
+y_=y_.reshape(len(y_),1)
+acc = np.mean(y_ == y)
+print('模型准确性:',acc)
+
+x=np.linspace(-1.2,1.2,200)
+
+xx,yy = np.meshgrid(x,x)
+print(xx)
+print(xx.shape)
+print(yy)
+print(yy.shape)
+z = feature_mapping(xx.ravel(),yy.ravel(),6).values
+zz = z @ theta_final
+zz = zz.reshape(xx.shape)
+print(zz)
+
+fig,ax = plt.subplots()
+ax.scatter(data[data['Accepted']==0]['Test1'],data[data['Accepted']==0]['Test2'],c='r',marker='x',label='y=0')
+ax.scatter(data[data['Accepted']==1]['Test1'],data[data['Accepted']==1]['Test2'],c='g',marker='o',label='y=1')
+ax.legend()
+ax.set(xlabel='Test1',ylabel='Test2')
+plt.contour(xx,yy,zz,0)
+plt.savefig('02-logistic_regression/logistics(not linear)2.jpg')
+plt.show()
