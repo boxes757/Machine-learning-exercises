@@ -1,0 +1,79 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = pd.read_csv('02-logistic_regression/ex2data1.txt',names=['Exam1','Exam2','Accepted'])
+print(data.head())
+
+fig,ax = plt.subplots()
+ax.scatter(data[data['Accepted']==0]['Exam1'],data[data['Accepted']==0]['Exam2'],c='r',marker='x',label='y=0')
+ax.scatter(data[data['Accepted']==1]['Exam1'],data[data['Accepted']==1]['Exam2'],c='g',marker='o',label='y=1')
+ax.legend()
+ax.set(xlabel='Exam1',ylabel='Exam2')
+plt.savefig('02-logistic_regression/logistics(linear)1.jpg')
+plt.show()
+
+data.insert(0,'ones',1)
+X=data.iloc[:,0:-1]
+y=data.iloc[:,-1]
+print(X.head())
+print(y.head())
+X = X.values
+y = y.values
+y = y.reshape(len(y),1)
+print(X.shape)
+print(y.shape)
+
+def sigmoid(z):
+    return 1/(1+np.exp(-z))
+
+def CostFunction(X,y,theta):
+    R=sigmoid(X@theta)
+    A=y * np.log(R)
+    B=(1-y) * np.log(1-R)
+    return -np.sum(A+B)/len(X)
+
+theta = np.zeros((3,1))
+cost_init=CostFunction(X,y,theta)
+print(cost_init)
+
+def GradientDescent(X,y,theta,alpha,times):
+    costs=[]
+    for i in range(times):
+        A = sigmoid(X @ theta)
+        theta = theta - (alpha/len(X)) * (X.T @ (A-y))
+        cost = CostFunction(X, y, theta)
+        costs.append(cost)
+        if(i % 1000 ==0):
+            print(cost)
+    return theta,costs
+
+alpha = 0.004
+times = 200000
+
+theta_final,costs = GradientDescent(X,y,theta,alpha,times)
+print(theta_final)
+
+def predict(X,theta):
+    A = sigmoid(X@theta)
+    return [1 if x>=0.5 else 0 for x in A]
+
+y_= np.array(predict(X,theta_final))
+y_=y_.reshape(len(y_),1)
+acc = np.mean(y_ == y)
+print('模型准确性:',acc)
+
+coef1 = -theta_final[0,0]/theta_final[2,0]
+coef2 = -theta_final[1,0]/theta_final[2,0]
+
+x=np.linspace(20,100,100)
+f = coef1 + coef2 * x
+
+fig,ax = plt.subplots()
+ax.scatter(data[data['Accepted']==0]['Exam1'],data[data['Accepted']==0]['Exam2'],c='r',marker='x',label='y=0')
+ax.scatter(data[data['Accepted']==1]['Exam1'],data[data['Accepted']==1]['Exam2'],c='g',marker='o',label='y=1')
+ax.plot(x,f,'-b',label='Dividing line')
+ax.legend()
+ax.set(xlabel='Exam1',ylabel='Exam2')
+plt.savefig('02-logistic_regression/logistics(linear)2.jpg')
+plt.show()
