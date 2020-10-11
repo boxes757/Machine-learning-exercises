@@ -1,0 +1,115 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.io as sio
+
+data = sio.loadmat('03-neural network/ex3data1.mat')
+
+print(data.keys())
+
+raw_X = data['X']
+raw_y = data['y']
+print(raw_X.shape)
+print(raw_y.shape)
+
+'''
+def print_one_picture(raw_X):   ##随机画一张图
+    k = np.random.randint(5000)
+    image = raw_X[k,:]
+    fig,ax = plt.subplots(figsize=(1,1))
+    image = image.reshape(20,20)
+    ax.imshow(image.T,cmap='gray_r')
+    plt.xticks([])  ##横纵坐标赋空列表，则不显示数值
+    plt.yticks([])
+    plt.show()
+
+print_one_picture(raw_X)
+
+def print_100_picture(raw_X):   ##随机画一百张图
+    sample_index = np.random.choice(5000,100)
+    images = raw_X[sample_index,:]
+
+    fig,ax = plt.subplots(10,10,figsize=(10,10),sharex=True,sharey=True)  ##产生10*10个子图，整个图的大小是10*10,共享x,y的坐标
+
+    for i in range(0,10):
+        for j in range(0,10):
+            R = images[10*i + j].reshape(20,20) ##第3行第4列是ax[2,3]，对应第24张图，也就是10*2+3=23行的数据
+            ax[i,j].imshow(R.T,cmap='gray_r')
+    plt.xticks([])
+    plt.yticks([])
+    plt.show()
+
+print_100_picture(raw_X)
+'''
+
+def sigmoid(z):
+    return 1/(1+np.exp(-z))
+
+def CostFunction(theta,X,y,lamda):  ##theta为一维向量！！
+    R=sigmoid(X@theta)   ##theta一维向量，作矩阵乘法时。左乘作为行向量运算，右乘作为列向量进行运算，计算结果也是一维数组
+    A=y * np.log(R)  ##X为（5000,401）矩阵，theta为（401,）一维向量，R是(5000,)一维向量
+    B=(1-y) * np.log(1-R)
+    ##reg = np.sum(np.power(theta[1:],2)) * (lamda/ （2 * len(X)）)
+    reg = theta[1:] @ theta[1:] * (lamda/ (2 * len(X)))  ##两种写法结果一致
+    return -np.sum(A+B)/len(X)+reg
+
+def gradient_reg(theta,X,y,lamda):   ##带正则化项的梯度向量
+    A = sigmoid(X @ theta)
+    R = theta[1:] * (lamda / len(X))
+    R = np.insert(R, 0, values=0, axis=0)
+    grad1 = (X.T @ (A-y)) / len(X)
+    return grad1+R
+
+X = np.insert(raw_X,0,values=1,axis=1)
+print(X.shape)
+
+y = raw_y.flatten()  ##损失函数中涉及到y与R的运算，R为（5000，）的一维向量，需要将y也转化为一维向量
+print(y.shape)
+
+from scipy.optimize import minimize
+
+def one_vs_all(X,y,lamda,K):  ##K是分类器值
+    n = X.shape[1]  ##获取X的第二个维度的值，此处即列数401
+    theta_all = np.zeros((K,n))   ##此处为（10,401）矩阵
+
+    for i in range(1,K+1):    ##此处K=10，i取1,2,3,...,10
+        theta_i = np.zeros(n,)   ##以0作为初始值，分别为各分类器运行优化函数
+        res = minimize(CostFunction,x0=theta_i,args=(X,y == i,lamda),method='TNC',jac=gradient_reg)
+        theta_all[i-1,:] = res.x  ##将结果保存到theta_all的相应位置，注意i为分类器的标号，存储时需要-1
+    return theta_all
+
+lamda = 1
+K = 10
+theta_final = one_vs_all(X,y,lamda,K)
+print(theta_final)
+
+def predict(X,theta_final):
+    A = sigmoid(X @ theta_final.T) ##theta_final是(10,401)，X是(5000,401)
+    k = np.argmax(A,axis=1)  ##np.argmax返回的是数组中各行(或列)中最大数的索引值。一维数组时，返回的是索引值的值，比如第4个数，返回3；二维数组时，返回的是由各索引值组成的一维数组
+    return k+1               ##axis=0代表在各行中寻找某一列的最大值的索引值，axis=1代表在各列中寻找某一行的最大值的索引值。
+ ## k+1：当索引值为4时，代表第5个分类器，所以要加1     0是第一列，代表分类器1；1代表分类器2；9代表分类器10，分类器10规定为数字0；
+y_predict = predict(X,theta_final)
+acc = np.mean(y_predict == y)  ##由于predict方法返回的是分类器的值（索引值加1）组成的一维数组，所以和y比，y也是转化来的一维数组
+print(acc)
+
+
+def showImage(rawX, rawY, k):
+    index = np.random.choice(len(rawX), k * k)
+    fig, ax = plt.subplots(k, k, sharex=True, sharey=True, figsize=(k, k))
+    ##plt.subplots_adjust(top=1)
+    fig.subplots_adjust(wspace=0.5, hspace=0.5)
+    for i in range(k):
+        for j in range(k):
+            image = rawX[index[i * k + j], :]
+            label = rawY[index[i * k + j]][0]
+            ax[i][j].set_xlabel(label)
+            ##ax[i][j].set_title(label)
+            ax[i][j].imshow(image.reshape(20, 20).T, cmap='gray_r')
+    plt.xticks([])  # 去掉横坐标值
+    plt.yticks([])  # 去掉纵坐标值
+    plt.savefig('03-neural network/logistics(duo)2.jpg')
+    plt.show()
+
+rawX = data['X']
+rawY = data['y']
+y_predict = y_predict.reshape([len(rawY), 1])
+showImage(rawX, y_predict, 10)
